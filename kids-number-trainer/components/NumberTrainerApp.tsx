@@ -1,3 +1,4 @@
+'use client';
 // File: src/NumberTrainerApp.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -179,7 +180,7 @@ function runDevSelfTests() {
     console.assert(thaiWord(99) === "เก้าสิบเก้า", "TH 99 should be 'เก้าสิบเก้า'");
 
     // Delay expectations
-    console.assert(DELAY.CORRECT_MS === 1000, "Correct delay should be 1000ms");
+    console.assert(DELAY.CORRECT_MS === 3000, "Correct delay should be 3000ms");
 
     console.groupEnd();
   } catch (e) {
@@ -294,7 +295,7 @@ function Flashcard({ index, onIndex, onShuffle }: { index: number; onIndex: (i: 
           </Button>
           <div className="text-sm opacity-70">{index + 1} / {NUMBERS.length}</div>
           <Button variant="ghost" onClick={() => onIndex((index + 1) % NUMBERS.length)} className="text-base">
-            ถัดไป <StepForward className="ml-2" />
+            <StepForward className="ml-2" /> ถัดไป
           </Button>
         </CardFooter>
       </Card>
@@ -304,11 +305,18 @@ function Flashcard({ index, onIndex, onShuffle }: { index: number; onIndex: (i: 
 
 function Quiz() {
   const [order, setOrder] = useState<number[]>(() => {
-    const fromStore = localStorage.getItem(STORE_KEY.quizOrder);
-    return fromStore ? JSON.parse(fromStore) : shuffleArray(NUMBERS.map((_, i) => i));
+    if (typeof window !== "undefined") {
+      const fromStore = localStorage.getItem(STORE_KEY.quizOrder);
+      return fromStore ? JSON.parse(fromStore) : shuffleArray(NUMBERS.map((_, i) => i));
+    }
+    return shuffleArray(NUMBERS.map((_, i) => i));
   });
-  const [idx, setIdx] = useState<number>(() => Number(localStorage.getItem(STORE_KEY.quizIndex) ?? 0));
-  const [score, setScore] = useState<number>(() => Number(localStorage.getItem(STORE_KEY.score) ?? 0));
+  const [idx, setIdx] = useState<number>(() =>
+    typeof window !== "undefined" ? Number(localStorage.getItem(STORE_KEY.quizIndex) ?? 0) : 0
+  );
+  const [score, setScore] = useState<number>(() =>
+    typeof window !== "undefined" ? Number(localStorage.getItem(STORE_KEY.score) ?? 0) : 0
+  );
   const [answered, setAnswered] = useState<null | boolean>(null);
 
   const safeIdx = Math.min(idx, order.length - 1);
@@ -445,8 +453,14 @@ function Quiz() {
 
 // -------------------- App Root --------------------
 export default function NumberTrainerApp() {
-  const [mode, setMode] = useState<"learn" | "quiz">(() => (localStorage.getItem(STORE_KEY.mode) as any) || "learn");
-  const [learnIndex, setLearnIndex] = useState<number>(() => Number(localStorage.getItem(STORE_KEY.learnIndex) ?? 0));
+  const [mode, setMode] = useState<"learn" | "quiz">(() =>
+    (typeof window !== "undefined"
+      ? (localStorage.getItem(STORE_KEY.mode) as "learn" | "quiz" | null)
+      : null) || "learn"
+  );
+  const [learnIndex, setLearnIndex] = useState<number>(() =>
+    typeof window !== "undefined" ? Number(localStorage.getItem(STORE_KEY.learnIndex) ?? 0) : 0
+  );
 
   useEffect(() => localStorage.setItem(STORE_KEY.mode, mode), [mode]);
   useEffect(() => localStorage.setItem(STORE_KEY.learnIndex, String(learnIndex)), [learnIndex]);
